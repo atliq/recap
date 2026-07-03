@@ -1,0 +1,44 @@
+# RECAP backend - one-command local run.
+#
+#   docker compose up --build      # start (first build downloads ML wheels)
+#   docker compose down            # stop
+#
+# Then load the extension in Chrome (chrome://extensions → Load unpacked →
+# extension/) - it talks to the backend at http://localhost:8000.
+services:
+  recap:
+    build: .
+    image: recap-backend:latest
+    container_name: recap-backend
+    # Publish ONLY to the host loopback - the backend is never exposed to the LAN.
+    ports:
+      - "127.0.0.1:8000:8000"
+    # Secrets/config come from .env at runtime (never baked into the image).
+    # Optional: you can also set keys via the extension Options page instead.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Bind inside the container; the loopback-only publish above keeps it private.
+      HOST: "0.0.0.0"
+      PORT: "8000"
+    volumes:
+      # The index (safe to delete to reset) and the downloaded model cache persist
+      # across restarts. ./data mirrors the manual-setup layout.
+      - ./data:/app/data
+      - recap-hf-cache:/app/.cache/huggingface
+    # Lets the container reach an Ollama running on the HOST. When using Ollama,
+    # set in .env:  LLM_BASE_URL=http://host.docker.internal:11434/v1  (provider "custom"),
+    # and for local Ollama embeddings: EMBEDDING_BASE_URL=http://host.docker.internal:11434/v1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+
+volumes:
+  recap-hf-cache:

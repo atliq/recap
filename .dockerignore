@@ -1,0 +1,23 @@
+# Keep the build context small and never bake secrets or runtime state into the image.
+.git/
+.gitignore
+.venv/
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Secrets + per-user runtime state (provided at runtime via env_file / volumes).
+.env
+data/
+
+# Not needed in the backend image.
+extension/
+tests/
+*.md
+LICENSE
+.claude/
+.vscode/
+categories/
+tools/

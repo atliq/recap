@@ -1,0 +1,36 @@
+# =============================================================================
+# RECAP - Python dependencies (pinned to a known-good set)
+# To regenerate a fully hash-locked file:
+#   pip install pip-tools && pip-compile --generate-hashes requirements.txt
+# =============================================================================
+
+# Core framework
+fastapi==0.136.1
+uvicorn[standard]==0.42.0
+pydantic==2.12.5
+pydantic-settings==2.13.1
+python-dotenv>=1.0,<2
+
+# Embeddings, reranking, ML
+sentence-transformers==5.0.0
+numpy>=1.24,<3
+# torch is platform/accelerator-specific. This is the version RECAP was built
+# against; for a CPU-only or specific-CUDA build, install torch first from
+# https://pytorch.org/get-started/locally/ then run pip install -r requirements.txt
+torch==2.7.1
+
+# Vector store
+lancedb==0.29.2
+pyarrow==21.0.0
+
+# Knowledge graph
+networkx==3.5
+
+# LLM providers
+openai==2.9.0
+
+# Entity extraction for the knowledge graph. The model is installed alongside
+# spaCy (via its release wheel) so the graph works out of the box - no separate
+# `python -m spacy download` step. Degrades gracefully if the model ever fails to load.
+spacy>=3.8,<3.9
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl

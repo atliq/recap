@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RECAP - Settings</title>
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    /* ── Reset ─────────────────────────────────────────────── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      /* Layout-only tokens; palette/typography inherited from theme.css */
+      --bg-input: var(--card);
+      --success: var(--teal-deep);
+      --success-bg: var(--teal-tint);
+      --success-border: rgba(12, 143, 127, 0.22);
+      --error: var(--danger);
+      --error-bg: rgba(192, 69, 63, 0.08);
+      --error-border: rgba(192, 69, 63, 0.28);
+      --radius-md: var(--radius);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+    }
+
+    /* ── Layout: sidebar + wide content ────────────────────── */
+    .layout {
+      display: flex;
+      align-items: flex-start;
+      max-width: 1240px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar (sticky nav rail) ─────────────────────────── */
+    .sidebar {
+      flex: 0 0 250px;
+      width: 250px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      padding: 30px 20px;
+      background: var(--card);
+      border-right: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .brand-icon img {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+    }
+
+    .brand h1 {
+      font-family: var(--mono);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      line-height: 1.15;
+    }
+
+    .brand h1 .re {
+      color: var(--teal);
+    }
+
+    .brand h1 .cap {
+      color: var(--ink);
+    }
+
+    .brand h1 .suffix {
+      display: block;
+      color: var(--muted);
+      font-weight: 500;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      font-size: 10px;
+      margin-top: 3px;
+    }
+
+    /* ── Sidebar nav (scroll-spy) ──────────────────────────── */
+    .side-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .side-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border-left: 2px solid transparent;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--ink-2);
+      transition: background var(--transition), color var(--transition), border-color var(--transition);
+    }
+
+    .side-nav a:hover {
+      background: var(--card-2);
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .side-nav a.active {
+      background: var(--teal-tint);
+      color: var(--teal-deep);
+      border-left-color: var(--teal);
+    }
+
+    .side-nav a svg {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+    }
+
+    .side-nav a.nav-danger:hover,
+    .side-nav a.nav-danger.active {
+      background: var(--error-bg);
+      color: var(--danger);
+      border-left-color: var(--danger);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .sidebar-footer .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--teal);
+      flex-shrink: 0;
+    }
+
+    /* ── Content column ────────────────────────────────────── */
+    .content {
+      flex: 1 1 auto;
+      min-width: 0;
+      padding: 44px 52px 72px;
+    }
+
+    .content-intro {
+      margin-bottom: 28px;
+    }
+
+    .content-intro h1 {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--ink);
+    }
+
+    .content-intro p {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* ── Responsive: collapse sidebar to a top bar ─────────── */
+    @media (max-width: 820px) {
+      .layout {
+        flex-direction: column;
+        max-width: 100%;
+      }
+
+      .sidebar {
+        flex: none;
+        width: 100%;
+        height: auto;
+        position: static;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px 18px;
+        padding: 16px 20px;
+        border-right: none;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .sidebar-footer {
+        display: none;
+      }
+
+      .side-nav {
+        flex: 1 1 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      .side-nav a,
+      .side-nav a.active,
+      .side-nav a.nav-danger.active {
+        border-left: none;
+        padding: 8px 10px;
+      }
+
+      .content {
+        padding: 28px 22px 60px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+    }
+
+    /* ── Section cards ─────────────────────────────────────── */
+    .section {
+      position: relative;
+      background: var(--card);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+      scroll-margin-top: 24px;
+      animation: slideUp 0.4s ease backwards;
+    }
+
+    /* First section carries the filing-tab flourish */
+    .section.is-first::before {
+      content: "";
+      position: absolute;
+      top: -1px;
+      left: 24px;
+      width: 44px;
+      height: 5px;
+      background: var(--teal);
+      border-radius: 0 0 4px 4px;
+    }
+
+    .section:nth-child(2) {
+      animation-delay: 0.05s;
+    }
+
+    .section:nth-child(3) {
+      animation-delay: 0.1s;
+    }
+
+    .section:nth-child(4) {
+      animation-delay: 0.15s;
+    }
+
+    .section:nth-child(5) {
+      animation-delay: 0.2s;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--teal-tint);
+      border: 1px solid rgba(12, 143, 127, 0.22);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      color: var(--teal-deep);
+    }
+
+    .section-header h2 {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--ink);
+    }
+
+    .section-header-desc {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    /* ── Form fields ───────────────────────────────────────── */
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-group label {
+      display: block;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 6px;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="password"],
+    select {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--line);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 14px;
+      padding: 11px 13px;
+      border-radius: var(--radius-sm);
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px var(--teal-tint);
+    }
+
+    input::placeholder {
+      color: var(--muted);
+    }
+
+    select {
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238a95a3' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 30px;
+      cursor: pointer;
+    }
+
+    select option {
+      background: var(--card);
+      color: var(--ink);
+    }
+
+    .description {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    /* Key visibility toggle */
+    .key-field {
+      position: relative;
+    }
+
+    .key-field input {
+      padding-right: 42px;
+    }
+
+    .key-toggle {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      transition: var(--transition);
+    }
+
+    .key-toggle:hover {
+      color: var(--ink-2);
+      background: var(--card-2);
+    }
+
+    /* Provider cards */
+    .provider-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .provider-card {
+      background: var(--card-2);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      transition: border-color var(--transition), background var(--transition);
+    }
+
+    .provider-card:hover {
+      border-color: var(--teal);
+      background: var(--card);
+    }
+
+    .provider-card label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .provider-card label span.provider-name {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--ink);
+    }
+
+    .provider-card label span.provider-model {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-left: auto;
+    }
+
+    /* ── Inline row ────────────────────────────────────────── */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* When one field of the row is hidden (e.g. Ollama needs no key),
+       let the remaining field span the full width. */
+    .form-row.single {
+      grid-template-columns: 1fr;
+    }
+
+    /* ── Danger zone ───────────────────────────────────────── */
+    .danger-zone {
+      border-color: rgba(192, 69, 63, 0.28) !important;
+    }
+
+    .danger-zone .section-icon {
+      background: rgba(192, 69, 63, 0.08);
+      border-color: rgba(192, 69, 63, 0.22);
+      color: var(--danger);
+    }
+
+    .danger-text {
+      font-size: 12px;
+      color: var(--ink-2);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    /* ── Buttons ───────────────────────────────────────────── */
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 28px;
+      animation: slideUp 0.4s ease backwards;
+      animation-delay: 0.25s;
+    }
+
+    .btn {
+      font-family: var(--mono);
+      font-weight: 600;
+      font-size: 12px;
+      padding: 11px 22px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition), border-color var(--transition);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    .btn-primary {
+      background: var(--teal);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--teal-deep);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--ink-2);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--teal);
+      color: var(--teal-deep);
+    }
+
+    .btn-danger {
+      background: transparent;
+      border: 1px solid rgba(192, 69, 63, 0.4);
+      color: var(--danger);
+    }
+
+    .btn-danger:hover {
+      background: rgba(192, 69, 63, 0.08);
+      border-color: var(--danger);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    /* ── LLM connection test ───────────────────────────────── */
+    .llm-test-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .test-result {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      letter-spacing: 0.3px;
+      line-height: 1.4;
+    }
+
+    .test-result.muted {
+      color: var(--muted);
+    }
+
+    .test-result.success {
+      color: var(--success);
+    }
+
+    .test-result.error {
+      color: var(--error);
+    }
+
+    /* ── Toast ─────────────────────────────────────────────── */
+    #status {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.6px;
+      z-index: 100;
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+      white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(22, 32, 43, 0.12);
+    }
+
+    #status.visible {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    #status.success {
+      background: var(--success-bg);
+      border: 1px solid var(--success-border);
+      color: var(--success);
+    }
+
+    #status.error {
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      color: var(--error);
+    }
+
+    /* ── Privacy Dashboard ─────────────────────────────────── */
+    .privacy-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .privacy-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--teal-tint);
+      border: 1px solid rgba(12, 143, 127, 0.22);
+      border-radius: 5px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--teal-deep);
+    }
+
+    .privacy-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .privacy-stat {
+      background: var(--card-2);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-sm);
+      padding: 14px 12px;
+      text-align: center;
+    }
+
+    .privacy-stat-val {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    .privacy-stat-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1.6px;
+      color: var(--muted);
+    }
+
+    .privacy-location {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--card-2);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--ink-2);
+      line-height: 1.5;
+    }
+
+    /* ── Animations ────────────────────────────────────────── */
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="layout">
+    <!-- Sidebar nav -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon"><img src="icons/icon48.png" alt="RECAP"></div>
+        <h1><span class="re">RE</span><span class="cap">CAP</span><span class="suffix">Settings</span></h1>
+      </div>
+      <nav class="side-nav">
+        <a href="#sec-backend" class="active">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg> Backend
+        </a>
+        <a href="#sec-ai">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+          </svg> AI Model
+        </a>
+        <a href="#sec-tracking">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg> Tracking
+        </a>
+        <a href="#sec-privacy">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg> Privacy
+        </a>
+        <a href="#sec-danger" class="nav-danger">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg> Danger Zone
+        </a>
+      </nav>
+      <div class="sidebar-footer"><span class="dot"></span> Local-only · Zero telemetry</div>
+    </aside>
+
+    <!-- Content -->
+    <main class="content">
+      <div class="content-intro">
+        <h1>Settings</h1>
+        <p>Configure your browsing memory system</p>
+      </div>
+
+    <!-- Backend Connection -->
+    <div class="section is-first" id="sec-backend">
+      <div class="section-header">
+        <div class="section-icon">
+          <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+        </div>
+        <div>
+          <h2>Backend Connection</h2>
+          <div class="section-header-desc">Where is RECAP's brain running?</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="api-url">Server URL</label>
+        <input type="text" id="api-url" placeholder="http://localhost:8000">
+        <div class="description">The address of your RECAP Python backend server.</div>
+      </div>
+    </div>
+
+    <!-- LLM Configuration -->
+    <div class="section" id="sec-ai">
+      <div class="section-header">
+        <div class="section-icon">
+          <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+          </svg>
+        </div>
+        <div>
+          <h2>AI Model</h2>
+          <div class="section-header-desc">Pick a provider, then set its model &amp; key</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="default-llm">Provider</label>
+        <select id="default-llm">
+          <option value="openai">OpenAI</option>
+          <option value="groq">Groq</option>
+          <option value="openrouter">OpenRouter</option>
+          <option value="google">Google Gemini</option>
+          <option value="anthropic">Anthropic</option>
+          <option value="ollama">Ollama - local (no key)</option>
+          <option value="custom">Custom (OpenAI-compatible URL)</option>
+        </select>
+        <div class="description">The active provider for answering questions. Your model &amp; key are remembered
+          per provider.</div>
+      </div>
+
+      <!-- Custom / self-hosted only -->
+      <div class="form-group" id="baseurl-group" style="display:none;">
+        <label for="llm-base-url">Base URL (OpenAI-compatible)</label>
+        <input type="text" id="llm-base-url" placeholder="http://localhost:11434/v1  (vLLM, LM Studio, ...)">
+        <div class="description">Required for a custom / self-hosted endpoint.</div>
+      </div>
+
+      <div class="form-row" id="model-key-row">
+        <div class="form-group">
+          <label for="llm-model">Model ID</label>
+          <input type="text" id="llm-model" placeholder="default model">
+          <div class="description">Leave blank to use the provider's default.</div>
+        </div>
+        <div class="form-group" id="key-group">
+          <label for="provider-api-key">API key</label>
+          <div class="key-field">
+            <input type="password" id="provider-api-key" placeholder="paste your API key">
+            <button class="key-toggle" data-target="provider-api-key" title="Show / hide key">
+              <svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="description" style="margin-top: 12px;">API keys are stored locally and sent to your backend. They
+        never leave your machine.</div>
+
+      <div class="llm-test-row">
+        <button id="test-llm" class="btn btn-secondary" type="button">
+          <svg style="width:14px;height:14px;margin-bottom:-2px;margin-right:4px;" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg> Test Connection
+        </button>
+        <span id="test-llm-result" class="test-result"></span>
+      </div>
+    </div>
+
+    <!-- Tracking -->
+    <div class="section" id="sec-tracking">
+      <div class="section-header">
+        <div class="section-icon">
+          <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <h2>Tracking Behavior</h2>
+          <div class="section-header-desc">Control when pages get indexed</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="min-visit-duration">Min Visit Duration</label>
+          <input type="number" id="min-visit-duration" min="5" placeholder="30">
+          <div class="description">Seconds you must stay on a page before it's indexed.</div>
+        </div>
+        <div class="form-group">
+          <label for="check-interval">Check Interval</label>
+          <input type="number" id="check-interval" min="5" placeholder="15">
+          <div class="description">How often (seconds) RECAP checks for new content.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Privacy & Data -->
+    <div class="section" id="sec-privacy">
+      <div class="section-header">
+        <div class="section-icon">
+          <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <div>
+          <h2>Privacy & Data</h2>
+          <div class="section-header-desc">All your data stays on your machine</div>
+        </div>
+      </div>
+
+      <div class="privacy-badges">
+        <div class="privacy-badge">
+          <svg style="width:12px;height:12px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg> Local-only storage
+        </div>
+        <div class="privacy-badge">
+          <svg style="width:12px;height:12px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+          </svg> Zero telemetry
+        </div>
+        <div class="privacy-badge">
+          <svg style="width:12px;height:12px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            <path
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+            </path>
+          </svg> Incognito-aware
+        </div>
+      </div>
+
+      <div class="privacy-stats" id="privacy-stats">
+        <div class="privacy-stat">
+          <div class="privacy-stat-val" id="priv-pages">-</div>
+          <div class="privacy-stat-label">Pages</div>
+        </div>
+        <div class="privacy-stat">
+          <div class="privacy-stat-val" id="priv-chunks">-</div>
+          <div class="privacy-stat-label">Chunks</div>
+        </div>
+        <div class="privacy-stat">
+          <div class="privacy-stat-val" id="priv-entities">-</div>
+          <div class="privacy-stat-label">Entities</div>
+        </div>
+        <div class="privacy-stat">
+          <div class="privacy-stat-val" id="priv-size">-</div>
+          <div class="privacy-stat-label">Storage</div>
+        </div>
+      </div>
+
+      <div class="privacy-location">
+        <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+        </svg>
+        <span>All data stored locally on your machine - never uploaded anywhere.</span>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 16px;">
+        <button id="export-data" class="btn btn-secondary">
+          <svg style="width:14px;height:14px;margin-bottom:-2px;margin-right:4px;" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg> Export All Data (JSON)
+        </button>
+        <button id="refresh-stats" class="btn btn-secondary">
+          <svg style="width:14px;height:14px;margin-bottom:-2px;margin-right:4px;" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg> Refresh Stats
+        </button>
+      </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="section danger-zone" id="sec-danger">
+      <div class="section-header">
+        <div class="section-icon">
+          <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+      </div>
+      <div class="danger-text">
+        This permanently removes all indexed pages, chunks, embeddings,
+        and knowledge graph data from the backend database.
+      </div>
+      <button id="clear-data" class="btn btn-danger">Clear All Indexed Data</button>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button id="save-options" class="btn btn-primary">Save Settings</button>
+      <button id="reset-options" class="btn btn-secondary">Reset Defaults</button>
+    </div>
+
+    <!-- Toast -->
+    <div id="status"></div>
+    </main>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+
+</html>

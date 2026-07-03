@@ -1,0 +1,44 @@
+[project]
+name = "recap"
+version = "1.0.0"
+description = "Local-first browsing-memory RAG - a Chrome extension plus a local FastAPI backend that indexes the pages you read and lets you search them in natural language."
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+license = { text = "MIT" }
+
+# Canonical dependency set for `uv` and Docker. requirements.txt mirrors this for
+# the plain-pip path. Keep the two in sync when changing versions.
+dependencies = [
+    "fastapi==0.136.1",
+    "uvicorn[standard]==0.42.0",
+    "pydantic==2.12.5",
+    "pydantic-settings==2.13.1",
+    "python-dotenv>=1.0,<2",
+    "sentence-transformers==5.0.0",
+    "numpy>=1.24,<3",
+    "torch==2.7.1",
+    "lancedb==0.29.2",
+    "pyarrow==21.0.0",
+    "networkx==3.5",
+    "openai==2.9.0",
+    "spacy>=3.8,<3.9",
+    # Entity-extraction model installed as a normal dependency, so `uv sync`
+    # sets up the knowledge graph with no separate `spacy download` step.
+    "en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+]
+
+[tool.uv]
+# This is an application, not a library - don't build/install the project itself,
+# just resolve and install its dependencies into the managed virtual environment.
+package = false
+
+# Pull torch from PyPI's CPU-only index. RECAP is local-first and runs fine on CPU;
+# the CPU wheel is a fraction of the CUDA wheel's size (much smaller Docker image
+# and faster installs). GPU users can override torch's source for their platform.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }

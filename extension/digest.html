@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RECAP Weekly Digest</title>
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    * { margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 80px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 680px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 48px;
+    }
+
+    .brand { font-size: 18px; }
+
+    .back-btn {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--ink-2);
+      border-radius: var(--radius-sm);
+      padding: 8px 16px;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color var(--transition), color var(--transition);
+    }
+    .back-btn:hover { border-color: var(--teal); color: var(--teal-deep); }
+
+    .digest-card {
+      position: relative;
+      width: 100%;
+      max-width: 680px;
+      background: var(--card);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      box-shadow: 0 1px 2px rgba(22,32,43,0.04);
+    }
+    /* Filing-tab flourish (mirrors .k-tab) */
+    .digest-card::before {
+      content: ""; position: absolute; top: -1px; left: 28px;
+      width: 44px; height: 5px; background: var(--teal); border-radius: 0 0 4px 4px;
+    }
+
+    .digest-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+      gap: 16px;
+    }
+
+    .digest-title {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--ink);
+      line-height: 1.25;
+    }
+
+    .digest-meta {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .page-pill {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--teal-deep);
+      background: var(--teal-tint);
+      border: 1px solid rgba(12,143,127,0.22);
+      border-radius: 5px;
+      padding: 4px 9px;
+      white-space: nowrap;
+    }
+
+    .digest-body {
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.75;
+      color: var(--ink-2);
+    }
+
+    /* Markdown rendering */
+    .digest-body h1, .digest-body h2, .digest-body h3 {
+      font-family: var(--mono);
+      color: var(--ink);
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      margin: 24px 0 10px;
+    }
+    .digest-body h1 { font-size: 19px; text-transform: uppercase; letter-spacing: 1px; }
+    .digest-body h2 { font-size: 16px; }
+    .digest-body h3 { font-size: 14px; color: var(--teal-deep); text-transform: uppercase; letter-spacing: 1px; }
+    .digest-body p { margin-bottom: 14px; }
+    .digest-body ul, .digest-body ol { padding-left: 22px; margin-bottom: 14px; }
+    .digest-body li { margin-bottom: 6px; }
+    .digest-body strong { color: var(--ink); font-weight: 600; }
+    .digest-body em { color: var(--teal-deep); font-style: italic; }
+    .digest-body code {
+      background: var(--card-2);
+      border: 1px solid var(--line-soft);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--ink);
+    }
+    .digest-body hr {
+      border: none;
+      border-top: 1px solid var(--line-soft);
+      margin: 24px 0;
+    }
+
+    .digest-footer {
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line-soft);
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition), border-color var(--transition);
+    }
+    .btn-primary {
+      background: var(--teal);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--teal-deep); }
+    .btn-outline {
+      background: transparent;
+      border-color: var(--line);
+      color: var(--ink-2);
+    }
+    .btn-outline:hover { border-color: var(--teal); color: var(--teal-deep); }
+
+    #loading {
+      text-align: center;
+      padding: 60px 20px;
+      font-family: var(--mono);
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--line);
+      border-top-color: var(--teal);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand wordmark"><span class="re">RE</span><span class="cap">CAP</span></div>
+    <button class="back-btn" id="digest-back-btn">Back</button>
+  </header>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    Generating your weekly digest...
+  </div>
+
+  <div class="digest-card" id="digest-card" style="display:none;">
+    <div class="digest-header">
+      <div>
+        <div class="digest-title">Your Weekly Digest</div>
+        <div class="digest-meta" id="digest-meta"></div>
+      </div>
+      <div class="page-pill" id="page-count-pill"></div>
+    </div>
+
+    <div class="digest-body" id="digest-body"></div>
+
+    <div class="digest-footer">
+      <button class="btn btn-primary" id="digest-refresh-btn">Refresh Digest</button>
+      <button class="btn btn-outline" id="digest-flashcards-btn">
+        Practice Flashcards
+      </button>
+    </div>
+  </div>
+
+  <script src="digest.js"></script>
+</body>
+</html>

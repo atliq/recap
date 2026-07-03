@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to RECAP</title>
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    /* Offline by design - no remote fonts for a privacy-first, local tool.
+       Palette + fonts inherited from theme.css (Index Catalog design system). */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .page {
+      height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      padding: 24px;
+    }
+
+    .card {
+      width: 580px;
+      max-width: 100%;
+      background: var(--card);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 1px 2px rgba(22, 32, 43, 0.04);
+      overflow: hidden;
+      position: relative;
+      animation: card-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes card-in {
+      from { opacity: 0; transform: translateY(14px) scale(0.99); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* Progress rail */
+    .progress-bar { height: 3px; background: var(--line-soft); }
+    .progress-fill {
+      height: 100%;
+      background: var(--teal);
+      border-radius: 0 3px 3px 0;
+      transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Steps */
+    .steps { position: relative; }
+    .step { display: none; padding: 44px 46px 36px; }
+    .step.active { display: block; animation: step-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    @keyframes step-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* Staggered reveal for the first screen */
+    .step.active > * { animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .step.active > *:nth-child(1) { animation-delay: 0.04s; }
+    .step.active > *:nth-child(2) { animation-delay: 0.10s; }
+    .step.active > *:nth-child(3) { animation-delay: 0.16s; }
+    .step.active > *:nth-child(4) { animation-delay: 0.22s; }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    /* ── Logo ── */
+    .welcome-logo { display: flex; align-items: center; gap: 14px; margin-bottom: 30px; }
+    .logo-icon {
+      width: 50px; height: 50px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .logo-icon img { width: 40px; height: 40px; object-fit: contain; }
+    .logo-wordmark { font-family: var(--mono); font-size: 26px; font-weight: 700; letter-spacing: 1px; line-height: 1; }
+    .logo-wordmark .re { color: var(--teal); }
+    .logo-wordmark .cap { color: var(--ink); }
+    .logo-tagline {
+      font-family: var(--mono); font-size: 11px; color: var(--muted);
+      margin-top: 8px; letter-spacing: 1.6px; text-transform: uppercase;
+    }
+
+    /* ── Step 1 ── */
+    .welcome-headline {
+      font-family: var(--mono);
+      font-size: 30px; font-weight: 700; line-height: 1.15;
+      letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 16px;
+    }
+    .welcome-headline span { color: var(--teal-deep); }
+    .welcome-sub { font-family: var(--sans); font-size: 15px; color: var(--ink-2); line-height: 1.65; margin-bottom: 30px; max-width: 44ch; }
+
+    .feature-list { display: flex; flex-direction: column; gap: 10px; }
+    .feature-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 16px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      position: relative;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .feature-item::before {
+      content: ''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px;
+      background: var(--teal); border-radius: 3px;
+      transform: scaleY(0); transform-origin: center; transition: transform 0.25s;
+    }
+    .feature-item:hover { border-color: var(--teal); transform: translateX(2px); }
+    .feature-item:hover::before { transform: scaleY(1); }
+    .feature-icon {
+      flex: none; width: 38px; height: 38px; border-radius: var(--radius-sm);
+      background: var(--teal-tint);
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .feature-text { font-family: var(--sans); font-size: 13px; color: var(--ink-2); line-height: 1.5; }
+    .feature-text strong { display: block; color: var(--ink); font-size: 13.5px; font-weight: 650; margin-bottom: 2px; }
+
+    /* ── Section headings (steps 2-4) ── */
+    .step-title {
+      font-family: var(--mono); font-size: 20px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase; color: var(--ink); margin-bottom: 8px;
+    }
+    .step-sub { font-family: var(--sans); font-size: 14px; color: var(--ink-2); line-height: 1.6; margin-bottom: 24px; }
+
+    /* ── Step 2 ── */
+    .code-hint {
+      font-family: var(--mono); font-size: 12.5px;
+      background: var(--card-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 13px 15px; margin-bottom: 22px;
+      color: var(--ink); overflow-x: auto; white-space: nowrap;
+    }
+    .code-hint span { color: var(--teal-deep); font-weight: 700; margin-right: 8px; user-select: none; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block; font-family: var(--mono); font-size: 11px; font-weight: 500;
+      color: var(--muted); margin-bottom: 8px; letter-spacing: 1.6px; text-transform: uppercase;
+    }
+    .form-group input {
+      width: 100%; font-family: var(--mono); font-size: 13px;
+      padding: 12px 14px; border-radius: var(--radius-sm);
+      border: 1px solid var(--line); background: var(--card); color: var(--ink);
+      transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+    }
+    .form-group input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-tint); }
+    .test-btn {
+      font-family: var(--mono); font-size: 12px; font-weight: 600;
+      letter-spacing: 0.8px; text-transform: uppercase;
+      padding: 10px 18px; border-radius: var(--radius-sm); cursor: pointer;
+      background: transparent; color: var(--ink-2);
+      border: 1px solid var(--line); transition: background 0.16s, color 0.16s, border-color 0.16s;
+    }
+    .test-btn:hover:not(:disabled) { border-color: var(--teal); color: var(--teal-deep); }
+    .test-btn:disabled { opacity: 0.6; cursor: default; }
+    .conn-status {
+      margin-top: 14px; font-family: var(--sans); font-size: 13px; line-height: 1.5; padding: 0;
+      max-height: 0; overflow: hidden; opacity: 0;
+      transition: max-height 0.3s, opacity 0.3s, padding 0.3s;
+    }
+    .conn-status.show { max-height: 120px; opacity: 1; padding: 11px 14px; border-radius: var(--radius-sm); margin-top: 16px; }
+    .conn-status.success { background: var(--teal-tint); color: var(--teal-deep); border: 1px solid rgba(12,143,127,0.25); }
+    .conn-status.error { background: rgba(192,69,63,0.08); color: var(--danger); border: 1px solid rgba(192,69,63,0.22); }
+
+    /* ── Step 3 ── */
+    .how-grid { display: flex; flex-direction: column; gap: 14px; }
+    .how-card { display: flex; gap: 16px; align-items: flex-start; }
+    .how-num {
+      flex: none; width: 30px; height: 30px; border-radius: 50%;
+      background: var(--teal); color: #fff;
+      font-family: var(--mono); font-weight: 700; font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .how-title { font-family: var(--sans); font-size: 15px; font-weight: 650; color: var(--ink); margin-bottom: 3px; }
+    .how-desc { font-family: var(--sans); font-size: 13px; color: var(--ink-2); line-height: 1.55; }
+    .how-desc strong { color: var(--teal-deep); }
+    .shortcut-row {
+      display: flex; align-items: center; gap: 10px; margin-top: 24px;
+      font-family: var(--sans); font-size: 12.5px; color: var(--ink-2);
+      background: var(--card-2); border: 1px solid var(--line-soft);
+      border-radius: var(--radius); padding: 12px 14px;
+    }
+
+    /* ── Step 4 ── */
+    .ready-icon { font-size: 44px; margin-bottom: 8px; }
+    .ready-stats { display: flex; gap: 16px; margin: 24px 0; }
+    .ready-stat {
+      flex: 1; text-align: center; padding: 20px 12px;
+      background: var(--card-2); border: 1px solid var(--line-soft); border-radius: var(--radius);
+    }
+    .ready-stat-val { font-family: var(--mono); font-size: 30px; font-weight: 700; color: var(--teal-deep); line-height: 1; }
+    .ready-stat-label {
+      font-family: var(--mono); font-size: 11px; color: var(--muted);
+      margin-top: 10px; letter-spacing: 1.6px; text-transform: uppercase;
+    }
+    .privacy-note {
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--sans); font-size: 12.5px; color: var(--ink-2); line-height: 1.55;
+      background: var(--teal-tint); border: 1px solid rgba(12,143,127,0.2);
+      border-radius: var(--radius); padding: 12px 14px;
+    }
+
+    /* ── Nav ── */
+    .nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 46px 30px; border-top: 1px solid var(--line-soft);
+    }
+    .dots { display: flex; gap: 7px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); transition: all 0.3s; }
+    .dot.active { background: var(--teal); width: 22px; border-radius: 4px; }
+    .nav-actions { display: flex; align-items: center; gap: 14px; }
+
+    .btn {
+      font-family: var(--mono); font-size: 12px; font-weight: 600;
+      letter-spacing: 0.8px; text-transform: uppercase;
+      padding: 11px 22px; border-radius: var(--radius-sm); border: 1px solid transparent; cursor: pointer;
+      transition: background 0.16s, color 0.16s, border-color 0.16s;
+    }
+    .btn-primary {
+      background: var(--teal);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--teal-deep); }
+    .btn-skip {
+      background: none; border: none; color: var(--muted);
+      font-family: var(--mono); font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase;
+      cursor: pointer; padding: 8px;
+      transition: color 0.2s;
+    }
+    .btn-skip:hover { color: var(--ink-2); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card k-tab">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress" style="width: 25%"></div>
+      </div>
+
+      <div class="steps">
+
+        <!-- Step 1: Welcome -->
+        <div class="step active" id="step-1">
+          <div class="welcome-logo">
+            <div class="logo-icon"><img src="icons/icon128.png" alt="RECAP"></div>
+            <div class="logo-text">
+              <div class="logo-wordmark"><span class="re">RE</span><span class="cap">CAP</span></div>
+              <div class="logo-tagline">Photographic memory for the web</div>
+            </div>
+          </div>
+
+          <div class="welcome-headline">Your browser, now with <span>perfect memory.</span></div>
+          <p class="welcome-sub">
+            RECAP passively indexes pages you read and lets you search them
+            with natural language - privately, locally, instantly.
+          </p>
+
+          <div class="feature-list">
+            <div class="feature-item">
+              <div class="feature-icon">🧠</div>
+              <div class="feature-text">
+                <strong>AI-powered search</strong>
+                Ask questions, get answers from pages you've actually read.
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">🔒</div>
+              <div class="feature-text">
+                <strong>100% private &amp; local</strong>
+                All data stays on your machine. Zero cloud, zero telemetry.
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">⚡</div>
+              <div class="feature-text">
+                <strong>Instant omnibar</strong>
+                Press <strong style="display:inline;color:var(--teal-deep)">Ctrl+Shift+K</strong> anywhere to search your memory.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Connect Backend -->
+        <div class="step" id="step-2">
+          <div class="step-title">Connect your backend</div>
+          <p class="step-sub">
+            RECAP uses a local Python server for AI processing.
+            Install the dependencies, then run it on your machine to get started.
+          </p>
+
+          <div class="code-hint"><span>$</span>pip install -r requirements.txt &amp;&amp; python main.py</div>
+
+          <div class="form-group">
+            <label>Backend URL</label>
+            <input type="text" id="api-url-input" placeholder="http://localhost:8000" value="http://localhost:8000">
+          </div>
+
+          <button class="test-btn" id="test-conn-btn">Test Connection</button>
+          <div class="conn-status" id="conn-status"></div>
+
+          <p style="font-size:12px; color:var(--muted); line-height:1.6; margin-top:18px;">
+            Can't run it locally? See the project README for self-hosting options.
+          </p>
+        </div>
+
+        <!-- Step 3: How it Works -->
+        <!-- Step 3: Choose AI model -->
+        <div class="step" id="step-3">
+          <div class="step-title">Choose your AI</div>
+          <p class="step-sub">RECAP writes answers with the LLM provider you pick. Local runs fully private on your machine - nothing leaves your device.</p>
+
+          <div class="form-group">
+            <label for="onboard-provider">Provider</label>
+            <select id="onboard-provider" class="k-input" style="width:100%; cursor:pointer;">
+              <option value="ollama">Local · Ollama  (private - recommended)</option>
+              <option value="openai">OpenAI</option>
+              <option value="groq">Groq</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="google">Google Gemini</option>
+              <option value="custom">Custom (OpenAI-compatible URL)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="onboard-local-hint">
+            <div class="code-hint"><span>$</span>ollama pull gemma3:4b</div>
+            <p class="step-sub" style="margin:0;">100% on your machine - no key required. Install Ollama, pull a small model, and you're set.</p>
+          </div>
+
+          <div class="form-group" id="onboard-key-group" style="display:none;">
+            <label for="onboard-key">API key</label>
+            <input type="password" id="onboard-key" style="width:100%;" placeholder="paste your provider API key">
+          </div>
+
+          <div class="form-group" id="onboard-baseurl-group" style="display:none;">
+            <label for="onboard-baseurl">Base URL (OpenAI-compatible)</label>
+            <input type="text" id="onboard-baseurl" style="width:100%;" placeholder="http://localhost:11434/v1">
+          </div>
+
+          <div class="form-group" id="onboard-model-group">
+            <label for="onboard-model">Model ID <span style="opacity:.6;">(optional)</span></label>
+            <input type="text" id="onboard-model" style="width:100%;" placeholder="default model">
+            <p class="step-sub" style="margin:6px 0 0;">Leave blank to use the provider's default. You can change this later in Settings.</p>
+          </div>
+        </div>
+
+        <!-- Step 4: How it Works -->
+        <div class="step" id="step-4">
+          <div class="step-title">How RECAP works</div>
+          <p class="step-sub">Three things to know before you start browsing.</p>
+
+          <div class="how-grid">
+            <div class="how-card">
+              <div class="how-num">1</div>
+              <div class="how-content">
+                <div class="how-title">Browse normally</div>
+                <div class="how-desc">RECAP silently watches pages you spend 30+ seconds on and indexes them automatically. No action needed.</div>
+              </div>
+            </div>
+            <div class="how-card">
+              <div class="how-num">2</div>
+              <div class="how-content">
+                <div class="how-title">Ask questions later</div>
+                <div class="how-desc">Open the popup or press <strong>Ctrl+Shift+K</strong> anywhere to search with natural language.</div>
+              </div>
+            </div>
+            <div class="how-card">
+              <div class="how-num">3</div>
+              <div class="how-content">
+                <div class="how-title">Save highlights instantly</div>
+                <div class="how-desc">Select any text and press <strong>Ctrl+Shift+S</strong> to save it as a searchable note.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="shortcut-row">
+            <span>💡</span>
+            <span>Quick tip: pin RECAP to your Chrome toolbar for one-click access.</span>
+          </div>
+        </div>
+
+        <!-- Step 4: Ready -->
+        <div class="step" id="step-5">
+          <div style="text-align:center;">
+            <div class="ready-icon">🧠</div>
+            <div class="step-title" style="text-align:center; margin-bottom:8px;">You're all set!</div>
+            <p class="step-sub" style="text-align:center; max-width:360px; margin:0 auto;">
+              RECAP is now active and watching. Start browsing and your memory will grow automatically.
+            </p>
+          </div>
+
+          <div class="ready-stats">
+            <div class="ready-stat">
+              <div class="ready-stat-val" id="ready-pages">0</div>
+              <div class="ready-stat-label">Pages indexed</div>
+            </div>
+            <div class="ready-stat">
+              <div class="ready-stat-val" id="ready-chunks">0</div>
+              <div class="ready-stat-label">Text chunks</div>
+            </div>
+          </div>
+
+          <div class="privacy-note">
+            <span>🔒</span>
+            <span>All data is stored locally in
+              <code style="font-family:var(--mono); color:var(--teal-deep); background:var(--teal-tint); padding:1px 6px; border-radius:4px;">~/.recap/</code>.
+              No data ever leaves your machine.</span>
+          </div>
+        </div>
+
+      </div><!-- /steps -->
+
+      <div class="nav">
+        <div class="dots">
+          <div class="dot active" id="dot-1"></div>
+          <div class="dot" id="dot-2"></div>
+          <div class="dot" id="dot-3"></div>
+          <div class="dot" id="dot-4"></div>
+          <div class="dot" id="dot-5"></div>
+        </div>
+        <div class="nav-actions">
+          <button class="btn-skip" id="skip-btn">Skip</button>
+          <button class="btn btn-primary" id="next-btn">Get Started →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="onboarding.js"></script>
+</body>
+</html>

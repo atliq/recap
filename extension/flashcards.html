@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RECAP Flashcards</title>
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 20px 60px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 640px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 40px;
+    }
+
+    .brand { font-family: var(--mono); font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+    .brand .re { color: var(--teal); }
+    .brand .cap { color: var(--ink); }
+
+    .back-btn {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--ink-2);
+      border-radius: var(--radius-sm);
+      padding: 8px 16px;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color var(--transition), color var(--transition);
+    }
+    .back-btn:hover { border-color: var(--teal); color: var(--teal-deep); }
+
+    h2 {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--ink);
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    .source-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 32px;
+      text-align: center;
+      max-width: 480px;
+    }
+    .source-label a { color: var(--teal-deep); text-decoration: none; }
+
+    .progress-bar-wrap {
+      width: 100%;
+      max-width: 480px;
+      background: var(--line-soft);
+      border-radius: 4px;
+      height: 4px;
+      margin-bottom: 32px;
+    }
+    .progress-bar {
+      height: 4px;
+      background: var(--teal);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    /* Card */
+    .card-scene {
+      perspective: 1000px;
+      width: 100%;
+      max-width: 480px;
+      height: 260px;
+      margin-bottom: 28px;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .card.flipped { transform: rotateY(180deg); }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    /* Question face: crisp white index card with a teal filing-tab */
+    .card-front {
+      background: var(--card);
+      border: 1px solid var(--line);
+      box-shadow: 0 1px 3px rgba(22, 32, 43, 0.06);
+    }
+    .card-front::before {
+      content: "";
+      position: absolute;
+      top: -1px;
+      left: 28px;
+      width: 44px;
+      height: 5px;
+      background: var(--teal);
+      border-radius: 0 0 4px 4px;
+    }
+
+    /* Answer face: tinted paper card */
+    .card-back {
+      background: var(--card-2);
+      border: 1px solid var(--line);
+      box-shadow: 0 1px 3px rgba(22, 32, 43, 0.06);
+      transform: rotateY(180deg);
+    }
+
+    .card-tag {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .card-text {
+      font-family: var(--sans);
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 1.5;
+      color: var(--ink);
+    }
+
+    .card-back .card-text { color: var(--ink); font-weight: 500; font-size: 15px; }
+
+    .card-hint {
+      font-family: var(--mono);
+      margin-top: 16px;
+      font-size: 10.5px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      font-family: var(--mono);
+      padding: 10px 22px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background var(--transition), color var(--transition), border-color var(--transition), transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-again {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--danger);
+    }
+    .btn-again:hover { border-color: var(--danger); background: rgba(192, 69, 63, 0.06); }
+
+    .btn-good {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--teal-deep);
+    }
+    .btn-good:hover { border-color: var(--teal); background: var(--teal-tint); }
+
+    .btn-flip {
+      background: var(--teal);
+      border: 1px solid var(--teal);
+      color: #fff;
+    }
+    .btn-flip:hover { background: var(--teal-deep); border-color: var(--teal-deep); }
+
+    .counter {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+
+    /* States */
+    #loading, #error, #done {
+      text-align: center;
+      padding: 40px 20px;
+      max-width: 480px;
+    }
+    #loading { color: var(--muted); }
+    #error { color: var(--danger); }
+    #done h3 {
+      font-family: var(--mono);
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--teal-deep);
+      margin-bottom: 12px;
+    }
+    #done p { color: var(--ink-2); font-size: 14px; margin-bottom: 24px; }
+
+    .btn-restart {
+      font-family: var(--mono);
+      background: var(--teal);
+      color: #fff;
+      padding: 10px 28px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid var(--teal);
+      transition: background var(--transition);
+    }
+    .btn-restart:hover { background: var(--teal-deep); }
+
+    #quiz-area { width: 100%; max-width: 480px; display: flex; flex-direction: column; align-items: center; }
+
+    .url-load {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 28px;
+      width: 100%;
+    }
+    .url-load input {
+      flex: 1;
+      font-family: var(--sans);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      color: var(--ink);
+      font-size: 13px;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .url-load input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-tint); }
+    .url-load input::placeholder { color: var(--muted); }
+    .url-load button {
+      font-family: var(--mono);
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--ink-2);
+      border-radius: var(--radius-sm);
+      padding: 10px 18px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color var(--transition), color var(--transition);
+    }
+    .url-load button:hover { border-color: var(--teal); color: var(--teal-deep); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand wordmark"><span class="re">RE</span><span class="cap">CAP</span></div>
+    <button class="back-btn" id="back-btn">Back</button>
+  </header>
+
+  <h2>Flashcards</h2>
+  <div class="source-label" id="source-label">Loading...</div>
+
+  <div class="url-load">
+    <input type="url" id="url-input" placeholder="Optional: paste a page URL to quiz on...">
+    <button id="load-btn">Load</button>
+  </div>
+
+  <div id="loading">Generating flashcards from your memory...</div>
+  <div id="error" style="display:none;">Could not generate flashcards. Make sure the backend is running.</div>
+
+  <div id="quiz-area" style="display:none;">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+    </div>
+
+    <div class="counter" id="counter">Card 1 of 5</div>
+
+    <div class="card-scene">
+      <div class="card" id="card">
+        <div class="card-face card-front">
+          <div class="card-tag">Question</div>
+          <div class="card-text" id="question-text"></div>
+          <div class="card-hint">Click to reveal answer</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-tag">Answer</div>
+          <div class="card-text" id="answer-text"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls" id="controls" style="display:none;">
+      <button class="btn btn-again" id="btn-again">Again</button>
+      <button class="btn btn-good" id="btn-good">Got it</button>
+    </div>
+
+    <button class="btn btn-flip" id="flip-btn">Show Answer</button>
+  </div>
+
+  <div id="done" style="display:none;">
+    <h3>Session Complete!</h3>
+    <p id="done-msg">You reviewed all cards.</p>
+    <button class="btn-restart" id="restart-btn">Restart Deck</button>
+  </div>
+
+  <script src="flashcards.js"></script>
+</body>
+</html>

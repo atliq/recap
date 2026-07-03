@@ -1,0 +1,63 @@
+# Secrets
+.env
+.env.local
+*.key
+
+# Local data (RAG store, indexes, user browsing content)
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Model / ML caches
+.cache/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Large media (host demo videos as GitHub release assets, not in git)
+*.mp4
+*.mov
+
+# Editors / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local tooling (not part of the project)
+.claude/
+.claude-plugin/
+.mcp.json
+CLAUDE.local.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Tests
+.pytest_cache/
+htmlcov/
+.coverage
+
+.mcp.json
+# Local scratch (not part of the project)
+categories/
+tools/
+docs/
+Plans/

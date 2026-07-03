@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>New Tab</title>
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="newtab.css">
+</head>
+
+<body>
+
+    <!-- Top bar with brand and settings -->
+    <header class="top-nav">
+        <div class="brand">
+            <div class="brand-icon">
+                <img src="icons/icon48.png" alt="RECAP Logo">
+            </div>
+            <h1 class="wordmark"><span class="re">RE</span><span class="cap">CAP</span></h1>
+        </div>
+        <div class="nav-actions">
+            <div id="status-indicator" class="status-indicator">
+                <div class="status-dot"></div>
+                <span class="status-text">Disconnected</span>
+            </div>
+            <button id="settings-btn" class="icon-btn" title="Settings">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="dashboard">
+        <!-- Center Search -->
+        <div class="search-container z-10 relative">
+            <h2>What are you looking for?</h2>
+            <div class="search-wrapper">
+                <div class="search-icon">
+                    <svg style="width:20px;height:20px;" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <input type="text" id="query-input" placeholder="Search your browsing memory..." autocomplete="off"
+                    autofocus>
+                <button id="search-button">Search</button>
+            </div>
+            <div class="search-shortcut">Pro tip: Use <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd> to search from
+                any page.</div>
+        </div>
+
+        <!-- Inline Search Results Area -->
+        <div id="loading-spinner" class="loading-spinner" style="display:none;">
+            <svg style="width:24px;height:24px;animation:spin 1s linear infinite;color:var(--accent)" fill="none"
+                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>Searching memory...</span>
+        </div>
+
+        <!-- Chat Thread (shown after first search) -->
+        <div id="chat-container" class="chat-container" style="display:none;">
+            <div id="chat-thread" class="chat-thread"></div>
+            <div class="chat-input-row">
+                <input type="text" id="chat-input" class="chat-input" placeholder="Ask a follow-up..." autocomplete="off" />
+                <button id="chat-send-btn" class="chat-send-btn">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                    </svg>
+                </button>
+                <button id="new-chat-btn" class="new-chat-btn" title="Start new conversation">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    New Chat
+                </button>
+            </div>
+        </div>
+
+        <div id="dashboard-content" style="display: flex; flex-direction: column; gap: 40px; width: 100%;">
+            <!-- Daily Resurface: From Your Memory -->
+            <div id="resurface-section" class="resurface-section" style="display:none;">
+                <div class="section-title">
+                    <svg style="width:18px;height:18px;color:#6d28d9;" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <h3>From Your Memory</h3>
+                    <span class="section-subtitle">Pages you read that are worth revisiting</span>
+                </div>
+                <div class="resurface-grid" id="resurface-container"></div>
+            </div>
+            <!-- Stats & Widgets -->
+            <div class="widgets-grid">
+                <div class="widget stats-widget">
+                    <div class="widget-header">
+                        <svg style="width:16px;height:16px;color:var(--accent);" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <h3>Brain Stats</h3>
+                    </div>
+                    <div class="stats-row" id="stats-container">
+                        <div class="stat-item">
+                            <div class="stat-value" id="stat-pages">-</div>
+                            <div class="stat-label">Pages</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="stat-entities">-</div>
+                            <div class="stat-label">Entities</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="stat-size">-</div>
+                            <div class="stat-label">Storage</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="widget graph-teaser" id="graph-teaser-btn">
+                    <div class="widget-header">
+                        <svg style="width:16px;height:16px;color:#6d28d9;" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        <h3>Knowledge Graph</h3>
+                    </div>
+                    <div class="teaser-content">
+                        <p>Explore your personal second brain visually.</p>
+                        <button class="btn btn-outline" style="pointer-events:none;">Enter Graph View</button>
+                    </div>
+                </div>
+
+                <div class="widget flashcard-teaser" id="flashcard-btn">
+                    <div class="widget-header">
+                        <svg style="width:16px;height:16px;color:#fb923c;" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        <h3>Flashcards</h3>
+                    </div>
+                    <div class="teaser-content">
+                        <p>Quiz yourself on what you've read.</p>
+                        <button class="btn btn-outline" style="pointer-events:none;">Start Quiz</button>
+                    </div>
+                </div>
+
+                <div class="widget digest-teaser" id="digest-btn">
+                    <div class="widget-header">
+                        <svg style="width:16px;height:16px;color:#facc15;" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <h3>Weekly Digest</h3>
+                    </div>
+                    <div class="teaser-content">
+                        <p>See what you learned this week.</p>
+                        <button class="btn btn-outline" style="pointer-events:none;">View Digest</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Section -->
+            <div class="recent-section">
+                <div class="section-title">
+                    <svg style="width:18px;height:18px;color:#f472b6;" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3>Recently Read</h3>
+                </div>
+                <div class="recent-grid" id="recent-container">
+                    <!-- Rendered via JS -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <style>
+        .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 40px 0;
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .results-container {
+            max-width: 800px;
+            margin: 32px auto 60px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .answer-card {
+            background: var(--card);
+            border: 1px solid var(--line-soft);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: 0 1px 2px rgba(22, 32, 43, 0.05);
+        }
+
+        .answer-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1.4px;
+        }
+
+        .answer-content {
+            font-size: 15px;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        .answer-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 16px;
+        }
+
+        /* Markdown formatting for answers */
+        .answer-content p {
+            margin-top: 0;
+            margin-bottom: 12px;
+        }
+
+        .answer-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .answer-content a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .answer-content a:hover {
+            text-decoration: underline;
+        }
+
+        .answer-content strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .answer-content code {
+            background: var(--card-2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: var(--mono);
+            font-size: 13px;
+        }
+
+        .sources-header {
+            font-family: var(--mono);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.4px;
+            margin: 16px 0 8px;
+        }
+
+        .source-card {
+            background: var(--card-2);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            cursor: pointer;
+            transition: all var(--transition);
+            text-align: left;
+        }
+
+        .source-card:hover {
+            border-color: var(--accent);
+            background: var(--accent-glow);
+        }
+
+        .source-title {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .source-url {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .source-snippet {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            background: var(--bg-secondary);
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .badge {
+            display: inline-flex;
+            font-family: var(--mono);
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            margin-right: 8px;
+            margin-top: 12px;
+        }
+
+        .badge-score {
+            background: var(--accent-glow);
+            color: var(--accent-deep);
+        }
+
+        .error-msg {
+            background: rgba(192, 69, 63, 0.08);
+            color: var(--danger);
+            border: 1px solid rgba(192, 69, 63, 0.22);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            text-align: center;
+        }
+
+        /* ── Chat UI ─────────────────────────────────────────────────────── */
+        .chat-container {
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto 60px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        .chat-thread {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-bottom: 8px;
+            max-height: 70vh;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        .chat-thread::-webkit-scrollbar { width: 4px; }
+        .chat-thread::-webkit-scrollbar-track { background: transparent; }
+        .chat-thread::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+
+        .chat-msg {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            animation: fadeSlideUp 0.25s ease;
+        }
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .chat-msg.user { align-items: flex-end; }
+        .chat-msg.assistant { align-items: flex-start; }
+
+        .chat-bubble {
+            max-width: 85%;
+            padding: 14px 18px;
+            border-radius: 16px;
+            font-size: 15px;
+            line-height: 1.65;
+            /* Long unbroken strings (URLs, tokens) must wrap inside the bubble */
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+        .chat-msg.user .chat-bubble {
+            background: var(--accent-glow);
+            border: 1px solid rgba(12, 143, 127, 0.28);
+            color: var(--text-primary);
+            border-bottom-right-radius: 4px;
+        }
+        .chat-msg.assistant .chat-bubble {
+            background: var(--card);
+            border: 1px solid var(--border-glass);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+        .chat-bubble a { color: var(--accent); text-decoration: none; }
+        .chat-bubble a:hover { text-decoration: underline; }
+        .chat-bubble strong { color: var(--text-primary); }
+        .chat-bubble code { background: var(--card-2); padding: 2px 6px; border-radius: 4px; font-family: var(--mono); font-size: 13px; }
+        .chat-bubble p { margin: 0 0 10px; }
+        .chat-bubble p:last-child { margin-bottom: 0; }
+
+        .chat-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 0 4px;
+        }
+        .chat-sources-toggle {
+            font-size: 12px;
+            color: var(--accent);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 0;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .chat-sources-toggle:hover { opacity: 1; }
+        .chat-sources-list {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 4px;
+            max-width: 85%;
+        }
+        .chat-sources-list.open { display: flex; }
+        .chat-source-item {
+            background: var(--card-2);
+            border: 1px solid var(--border-subtle);
+            border-left: 3px solid var(--accent);
+            border-radius: 6px;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+            font-size: 13px;
+        }
+        .chat-source-item:hover { background: var(--accent-glow); border-color: var(--accent); }
+        .chat-source-title { font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+        .chat-source-url { color: var(--text-muted); font-size: 11px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+        .chat-thinking {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 12px 16px;
+            background: var(--card);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            border-bottom-left-radius: 4px;
+            font-size: 14px;
+            color: var(--text-muted);
+            width: fit-content;
+        }
+        .thinking-dots span {
+            display: inline-block;
+            width: 6px; height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: dotBounce 1.2s infinite;
+        }
+        .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dotBounce {
+            0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .chat-input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: var(--card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+        }
+        .chat-input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: inherit;
+        }
+        .chat-input::placeholder { color: var(--text-muted); }
+        .chat-send-btn {
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            color: #fff;
+            flex-shrink: 0;
+            transition: background 0.15s;
+        }
+        .chat-send-btn:hover { background: var(--accent-deep); }
+        .new-chat-btn {
+            font-family: var(--mono);
+            background: var(--card-2);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 11px;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            padding: 0 12px;
+            height: 36px;
+            cursor: pointer;
+            display: flex; align-items: center; gap: 5px;
+            white-space: nowrap;
+            transition: background 0.15s, color 0.15s;
+            flex-shrink: 0;
+        }
+        .new-chat-btn:hover { background: var(--card); border-color: var(--accent); color: var(--accent-deep); }
+
+        /* ── Daily Resurface ─────────────────────────────────────────────── */
+        .resurface-section { width: 100%; }
+        .section-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-left: 4px;
+            font-weight: 400;
+        }
+        .resurface-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .resurface-card {
+            background: rgba(167,139,250,0.05);
+            border: 1px solid rgba(167,139,250,0.15);
+            border-radius: 12px;
+            padding: 16px;
+            transition: border-color 0.2s, background 0.2s;
+            cursor: default;
+        }
+        .resurface-card:hover { border-color: rgba(167,139,250,0.4); background: rgba(167,139,250,0.08); }
+        .resurface-age {
+            font-size: 11px;
+            color: #6d28d9;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .resurface-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .resurface-snippet {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .resurface-actions { display: flex; gap: 8px; }
+        .btn-resurface-open {
+            background: rgba(167,139,250,0.15);
+            border: 1px solid rgba(167,139,250,0.25);
+            color: #6d28d9;
+            border-radius: 6px;
+            padding: 5px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-resurface-open:hover { background: rgba(167,139,250,0.3); }
+        .btn-resurface-chat {
+            background: var(--accent-glow);
+            border: 1px solid rgba(12, 143, 127, 0.22);
+            color: var(--accent-deep);
+            border-radius: 6px;
+            padding: 5px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-resurface-chat:hover { background: rgba(12, 143, 127, 0.18); }
+
+        /* ── Annotations ─────────────────────────────────────────────────── */
+        .annotation-area {
+            margin-top: 10px;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 10px;
+        }
+        .annotation-toggle {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 12px;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.15s;
+        }
+        .annotation-toggle:hover { color: var(--accent); }
+        .annotation-body { display: none; margin-top: 8px; }
+        .annotation-body.open { display: block; }
+        .annotation-input {
+            width: 100%;
+            background: var(--card);
+            border: 1px solid var(--border-glass);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 13px;
+            padding: 8px 10px;
+            resize: none;
+            font-family: inherit;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.15s;
+            min-height: 60px;
+        }
+        .annotation-input:focus { border-color: var(--accent); }
+        .annotation-save-btn {
+            margin-top: 6px;
+            background: var(--accent-glow);
+            border: 1px solid rgba(12, 143, 127, 0.22);
+            color: var(--accent-deep);
+            border-radius: 6px;
+            padding: 4px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .annotation-save-btn:hover { background: rgba(12, 143, 127, 0.18); }
+        .annotation-existing {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-style: italic;
+            background: var(--accent-glow);
+            border-left: 2px solid var(--accent);
+            padding: 6px 8px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+        }
+    </style>
+    <script src="newtab.js"></script>
+</body>
+
+</html>
