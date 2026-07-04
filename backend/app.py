@@ -28,6 +28,7 @@ from backend.models import (
     DeleteURLRequest,
     ExportData,
     HealthResponse,
+    KGToggleRequest,
     PageData,
     ProcessingResult,
     QueryRequest,
@@ -151,6 +152,12 @@ async def lifespan(app: FastAPI):
     )
     state.knowledge_graph = KnowledgeGraph(state.db)
 
+    # The KG toggle set from the extension UI (POST /settings/kg) is persisted
+    # in DB meta; once set, it overrides the .env default across restarts.
+    stored_kg = state.db.get_meta("enable_kg")
+    if stored_kg is not None:
+        settings.enable_kg = stored_kg == "1"
+
     # Initialize ingestion processor
     state.ingestion_processor = IngestionProcessor(
         settings=settings,
@@ -168,6 +175,7 @@ async def lifespan(app: FastAPI):
         knowledge_graph=state.knowledge_graph,
         embedding_fn=state.embedding_fn,
         recency_decay=settings.recency_decay,
+        enable_kg=settings.enable_kg,
     )
     state.reranker = ReRanker(settings.rerank_model)
     state.answer_generator = AnswerGenerator(settings)
@@ -311,6 +319,11 @@ def _register_routes(app: FastAPI) -> None:
     @app.post("/delete_domain")
     def delete_domain(req: DeleteDomainRequest):
         from urllib.parse import urlparse
+        # Normalize "www.example.com" -> "example.com" so the apex form matches
+        # the whole site; the suffix check below then covers every subdomain.
+        domain = req.domain.lower()
+        if domain.startswith("www."):
+            domain = domain[4:]
         pages = state.db.get_all_pages()
         deleted = 0
         for p in pages:
@@ -318,7 +331,7 @@ def _register_routes(app: FastAPI) -> None:
                 hostname = urlparse(p["url"]).hostname
             except Exception:
                 continue
-            if hostname and (hostname == req.domain or hostname.endswith('.' + req.domain)):
+            if hostname and (hostname == domain or hostname.endswith('.' + domain)):
                 # Delegate to the processor so vectors (LanceDB) and KG relations
                 # are removed too - a bare db.delete_page would orphan them.
                 if state.ingestion_processor.delete_page(p["url"]):
@@ -508,6 +521,25 @@ def _register_routes(app: FastAPI) -> None:
         if request.default_provider:
             settings.default_provider = request.default_provider
         return {"status": "updated"}
+
+    # -----------------------------------------------------------------
+    # Knowledge graph toggle
+    # -----------------------------------------------------------------
+    @app.post("/settings/kg")
+    async def update_kg_setting(request: KGToggleRequest):
+        """Flip the knowledge-graph master switch at runtime (extension Options).
+
+        Takes effect immediately for both ingestion NER and the KG retrieval
+        leg, and is persisted in DB meta so it survives backend restarts
+        (overriding the .env default). After enabling, already-indexed pages
+        can be backfilled via POST /maintenance/rebuild_kg.
+        """
+        state.settings.enable_kg = request.enabled
+        state.hybrid_retriever.enable_kg = request.enabled
+        await asyncio.to_thread(
+            state.db.set_meta, "enable_kg", "1" if request.enabled else "0"
+        )
+        return {"status": "updated", "enable_kg": request.enabled}
 
     # -----------------------------------------------------------------
     # Test LLM connection

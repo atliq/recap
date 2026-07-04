@@ -122,6 +122,16 @@ class UpdateAPIKeysRequest(BaseModel):
     default_provider: Optional[str] = Field(default=None, max_length=32)
 
 
+class KGToggleRequest(BaseModel):
+    """Request to flip the knowledge-graph master switch at runtime.
+
+    Sent by the extension Options page. Gates both ingestion NER and the KG
+    retrieval leg; persisted in DB meta so it survives backend restarts and
+    overrides the .env default from then on.
+    """
+    enabled: bool
+
+
 class TestLLMRequest(BaseModel):
     """Request to ping the currently-configured LLM with a trivial prompt.
 

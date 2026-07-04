@@ -54,6 +54,7 @@ class HybridRetriever:
         knowledge_graph: KnowledgeGraph,
         embedding_fn,
         recency_decay: float = 1.0,
+        enable_kg: bool = True,
     ):
         """
         Args:
@@ -64,12 +65,16 @@ class HybridRetriever:
             recency_decay: Per-day multiplicative decay applied to fused scores
                 (1.0 disables). Boosts recently-visited pages for time-oriented
                 browsing-history queries.
+            enable_kg: Master switch for the KG retrieval leg (mirrors
+                Settings.enable_kg). When False, retrieval runs BM25 + dense
+                only, regardless of per-request use_kg flags.
         """
         self.db = db
         self.vector_store = vector_store
         self.knowledge_graph = knowledge_graph
         self.embedding_fn = embedding_fn
         self.recency_decay = recency_decay
+        self.enable_kg = enable_kg
         self._query_vec_cache: Dict[str, List[float]] = {}  # small LRU-ish cache
 
     def retrieve(
@@ -95,6 +100,10 @@ class HybridRetriever:
             - chunk_id, text, score, page_url, page_title, source, timestamp
         """
         start_time = time.time()
+
+        # The instance-level master switch (Settings.enable_kg) trumps the
+        # per-request flag: a request can opt out of KG, never opt in past it.
+        use_kg = use_kg and self.enable_kg
 
         # Fetch a WIDE candidate pool per leg so fusion has enough to work with,
         # then fuse and truncate to top_k. A small per-leg pool starves RRF.

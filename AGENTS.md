@@ -9,7 +9,7 @@ RECAP is a **local-first** Chrome extension (Manifest V3) plus a local Python (F
 ## Setup & run
 
 Requires **Docker** (recommended) or **Python 3.11+**, plus Chrome. Three paths, all of
-which install spaCy + the `en_core_web_sm` model (so the knowledge graph works out of the box):
+which install spaCy + the `en_core_web_sm` model (so the knowledge graph works as soon as you opt in):
 
 ```bash
 # Docker - recommended: reproducible, one command. Serves http://127.0.0.1:8000 (loopback only).
@@ -29,7 +29,7 @@ the CPU wheel (`tool.uv.sources`) so images stay small and it runs anywhere; GPU
 - Copy `.env.example` → `.env` and set at least one LLM key (or point at a local Ollama). See **LLM & embeddings** below.
 - **Docker + a host Ollama:** the container can't see the host's `localhost` - set `LLM_BASE_URL`/`EMBEDDING_BASE_URL` to `http://host.docker.internal:11434/v1` (compose already maps `host.docker.internal`).
 - Load the extension: `chrome://extensions` → enable **Developer mode** → **Load unpacked** → select the `extension/` folder.
-- **Knowledge graph:** entities need spaCy (now installed by default). If you enabled it *after* indexing pages, backfill them without re-browsing via `POST /maintenance/rebuild_kg` (re-runs NER over stored text; SQLite is the source of truth).
+- **Knowledge graph:** **off by default** - retrieval runs BM25 + dense vectors only. Opt in from the extension **Options page toggle** (calls `POST /settings/kg`; takes effect immediately, persisted in DB meta so it survives backend restarts and overrides `.env`), or set `ENABLE_KG=true` in `.env` for a config-only setup. The master switch gates both ingestion NER and the KG retrieval leg; a request's `use_kg` can never override it on. After enabling, backfill already-indexed pages without re-browsing via `POST /maintenance/rebuild_kg` (re-runs NER over stored text; SQLite is the source of truth). Entities need spaCy (installed by default).
 
 ## Testing
 
@@ -112,6 +112,6 @@ tests/test_integration.py   plain-python test runner
 
 - Changing `embedding_model` / provider / dimension invalidates the vector space → the app **auto-reindexes from SQLite on next start**; expect a one-time rebuild.
 - `data/` is per-user runtime state; deleting it is safe (it re-indexes as you browse). It is intentionally wiped on a `SCHEMA_VERSION` bump.
-- The knowledge graph needs spaCy (`en_core_web_sm`); without it, entities/graph are empty but BM25 + dense retrieval still work.
+- The knowledge graph is **opt-in** (`ENABLE_KG=false` by default) and needs spaCy (`en_core_web_sm`); when disabled or without spaCy, entities/graph are empty but BM25 + dense retrieval still work.
 - With a **remote** embedding provider, the `SemanticGate` embeds the head of pages it may then reject - one more reason remote embeddings are opt-in. Fully-local setups are unaffected.
 - Commit conventions: run the test suite first; never bypass hooks; keep secrets and `data/` out of every commit.

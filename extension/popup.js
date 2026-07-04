@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // view: 'search' | 'refs' | 'highlights'
   let activeView = 'search';
   let activeDateDays = 0; // 0 = all time
+  let backendOnline = null; // last-known backend state (null = not yet checked)
 
   // Active LLM config (source of truth = Options/onboarding, stored in chrome.storage).
   // The popup only DISPLAYS it and sends it with each query - it does not edit it.
@@ -69,6 +70,28 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Init ──────────────────────────────────────────────────────
   loadPreferences();
   loadStats();
+
+  // ── Live backend status ───────────────────────────────────────
+  // The popup used to check the backend once at open, so a backend started
+  // (or stopped) while the popup stayed open never showed until reopen.
+  // Poll /health while open; on an offline -> online transition, reload
+  // whatever the user is looking at. The interval dies with the popup.
+  async function pollBackend() {
+    let online = false;
+    try {
+      const res = await fetch(`${apiBase}/health`, { cache: 'no-store' });
+      online = res.ok;
+    } catch (_) { /* unreachable = offline */ }
+
+    if (online === backendOnline) return;
+    const cameBackOnline = online && backendOnline === false;
+    setBackendStatus(online);
+    if (cameBackOnline) {
+      loadStats();
+      if (activeView === 'refs') loadReferences();
+    }
+  }
+  setInterval(pollBackend, 3000);
 
   // ── Events ────────────────────────────────────────────────────
   searchButton.addEventListener('click', performSearch);
@@ -318,8 +341,8 @@ document.addEventListener('DOMContentLoaded', () => {
           ${ref.content_type ? `<span class="badge">${escapeHtml(ref.content_type)}</span>` : ''}
           ${ref.visit_count && ref.visit_count > 1 ? `<span class="badge">${ref.visit_count} visits</span>` : ''}
           <div style="margin-left:auto; display:flex; gap:6px;">
-            <button class="ref-ignore" data-domain="${escapeHtml(host)}">Ignore</button>
-            <button class="ref-delete" data-url="${escapeHtml(ref.url)}">Delete</button>
+            <button class="ref-ignore" data-domain="${escapeHtml(host)}" title="Stop tracking ${escapeHtml(host)} permanently and delete everything already indexed from it">Ignore</button>
+            <button class="ref-delete" data-url="${escapeHtml(ref.url)}" title="Delete just this page from your index (its text, search entries and vectors)">Delete</button>
           </div>
         </div>`;
 
@@ -338,14 +361,23 @@ document.addEventListener('DOMContentLoaded', () => {
           e.stopPropagation();
           const domain = host;
           if (!domain) return;
-          if (confirm(`Are you sure you want to ignore all future tracking for ${domain}?`)) {
+          if (confirm(`Stop tracking ${domain} permanently and delete ALL its indexed pages?`)) {
             chrome.runtime.sendMessage({ action: 'ignoreDomain', domain: domain }, (res) => {
               if (res?.success) {
-                // Delete the current card visually, backend handles the rest
-                card.style.opacity = '0';
-                card.style.transform = 'translateX(30px)';
-                card.style.transition = '0.25s ease';
-                setTimeout(() => { card.remove(); loadStats(); }, 250);
+                // The backend purged the whole domain - remove EVERY card from
+                // it (not just the clicked one), so the list mirrors the index.
+                const bare = domain.toLowerCase().replace(/^www\./, '');
+                document.querySelectorAll('.ref-ignore[data-domain]').forEach((b) => {
+                  const d = (b.getAttribute('data-domain') || '').toLowerCase().replace(/^www\./, '');
+                  if (d !== bare && !d.endsWith('.' + bare)) return;
+                  const c = b.closest('.ref-card');
+                  if (!c) return;
+                  c.style.opacity = '0';
+                  c.style.transform = 'translateX(30px)';
+                  c.style.transition = '0.25s ease';
+                  setTimeout(() => c.remove(), 250);
+                });
+                setTimeout(loadStats, 300);
               }
             });
           }
@@ -486,6 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function setBackendStatus(online) {
+    backendOnline = online;  // shared last-known state, read by pollBackend()
     backendStatus.innerHTML = online
       ? '<span class="status-dot"></span><span>Backend online</span>'
       : '<span class="status-dot offline"></span><span>Backend offline</span>';

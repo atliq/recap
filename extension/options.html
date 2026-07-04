@@ -257,6 +257,56 @@
       }
     }
 
+    /* ── Toggle switch (matches popup) ─────────────────────── */
+    .toggle {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      cursor: pointer;
+      flex: none;
+    }
+
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: var(--line, #d8d4cc);
+      border-radius: 20px;
+      transition: all .18s ease;
+    }
+
+    .toggle-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: var(--muted, #8a8578);
+      border-radius: 50%;
+      transition: all .18s ease;
+    }
+
+    .toggle input:checked~.toggle-track {
+      background: var(--teal, #0f766e);
+    }
+
+    .toggle input:checked~.toggle-thumb {
+      transform: translateX(16px);
+      background: #fff;
+    }
+
+    .kg-toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
     /* ── Section cards ─────────────────────────────────────── */
     .section {
       position: relative;
@@ -887,6 +937,20 @@
           <label for="check-interval">Check Interval</label>
           <input type="number" id="check-interval" min="5" placeholder="15">
           <div class="description">How often (seconds) RECAP checks for new content.</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="kg-enabled">Knowledge Graph</label>
+          <div class="kg-toggle-row">
+            <label class="toggle" title="Enable / disable the knowledge graph">
+              <input type="checkbox" id="kg-enabled">
+              <span class="toggle-track"></span>
+              <span class="toggle-thumb"></span>
+            </label>
+            <span class="description" style="margin:0">Extract entities and link pages in the Graph view.</span>
+          </div>
+          <div class="description">Off (default) keeps indexing and search fast. Turn on if you use the Graph page - already-indexed pages gain entities on their next visit.</div>
         </div>
       </div>
     </div>

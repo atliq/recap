@@ -308,11 +308,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 let ignoreDomain = '';
                 try { ignoreDomain = new URL(ref.url).hostname; } catch (_) { ignoreDomain = ''; }
                 const ignoreBtnHtml = `
-                    <button class="ignore-btn" data-domain="${esc(ignoreDomain)}" title="Ignore this website forever">
+                    <button class="ignore-btn" data-domain="${esc(ignoreDomain)}" title="Stop tracking ${esc(ignoreDomain)} permanently and delete everything already indexed from it">
                         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                         </svg>
                         Ignore
+                    </button>
+                `;
+                const deleteBtnHtml = `
+                    <button class="ignore-btn page-delete-btn" data-url="${esc(ref.url)}" title="Delete just this page from your index (its text, search entries and vectors)">
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
                     </button>
                 `;
 
@@ -325,6 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   <div class="rc-meta">
                     ${ref.content_type ? `<span class="rc-badge">${esc(ref.content_type)}</span>` : ''}
                     <div style="flex:1"></div>
+                    ${deleteBtnHtml}
                     ${ignoreBtnHtml}
                   </div>
                   <div class="annotation-area">
@@ -394,19 +403,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-            // Ignore domain listeners
-            document.querySelectorAll('.ignore-btn').forEach(btn => {
+            // Ignore domain listeners (data-domain excludes the per-page delete
+            // button, which shares .ignore-btn only for styling)
+            document.querySelectorAll('.ignore-btn[data-domain]').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     const domain = btn.getAttribute('data-domain');
-                    if (confirm(`Are you sure you want to stop tracking and delete all history from ${domain}?`)) {
+                    if (confirm(`Stop tracking ${domain} permanently and delete ALL its indexed pages?`)) {
                         chrome.runtime.sendMessage({ action: 'ignoreDomain', domain }, (res) => {
                             if (res && res.success) {
-                                alert(`Domain ${domain} ignored successfully! History deleted.`);
+                                alert(`${domain} is now ignored: ${res.deleted ?? 0} indexed page(s) deleted, and it won't be tracked again.`);
                                 loadRecent(apiBase);
                             } else {
                                 alert('Failed to ignore domain.');
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Per-page delete listeners
+            document.querySelectorAll('.page-delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const url = btn.getAttribute('data-url');
+                    if (!url) return;
+                    if (confirm('Delete this page from your index?')) {
+                        chrome.runtime.sendMessage({ action: 'deleteUrl', url }, (res) => {
+                            if (res && res.success) {
+                                loadRecent(apiBase);
+                            } else {
+                                alert('Failed to delete page.');
                             }
                         });
                     }

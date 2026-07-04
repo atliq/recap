@@ -207,8 +207,20 @@ function ensureAlarms() {
 // backend in sync with the extension - the durable source of truth. Missing values
 // are sent as null, which the backend treats as "leave unchanged".
 function pushConfigToBackend() {
-  chrome.storage.sync.get(['apiUrl', 'preferredLlm', 'llmModel', 'llmBaseUrl'], (sync) => {
+  chrome.storage.sync.get(['apiUrl', 'preferredLlm', 'llmModel', 'llmBaseUrl', 'kgEnabled'], (sync) => {
     const apiUrl = sync.apiUrl || config.apiUrl;
+
+    // Re-apply the knowledge-graph toggle. The backend persists it in DB meta,
+    // but a fresh database (first run, schema bump) falls back to the .env
+    // default - re-pushing keeps the user's UI choice authoritative. Only push
+    // if the user has actually set it, so a pure-.env setup stays untouched.
+    if (typeof sync.kgEnabled === 'boolean') {
+      fetch(`${apiUrl}/settings/kg`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: sync.kgEnabled }),
+      }).catch(() => {});
+    }
     chrome.storage.local.get(
       ['groqApiKey', 'openaiApiKey', 'anthropicApiKey', 'googleApiKey', 'openrouterApiKey', 'customApiKey'],
       (loc) => {
@@ -524,28 +536,36 @@ async function handleDeleteUrl(url) {
 }
 
 async function handleIgnoreDomain(domain) {
-  return new Promise((resolve, reject) => {
-    chrome.storage.sync.get(['userBlockedDomains'], async (data) => {
+  // Normalize so ignoring "www.example.com" blocks and purges the whole site:
+  // the blocklist check matches `hostname === domain || hostname.endsWith('.' + domain)`,
+  // so the apex form covers www. and every other subdomain.
+  domain = String(domain || '').toLowerCase().replace(/^www\./, '');
+  if (!domain) return { success: false, error: 'No domain' };
+
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(['userBlockedDomains'], (data) => {
       const blocked = data.userBlockedDomains || [];
       if (!blocked.includes(domain)) {
         blocked.push(domain);
-        chrome.storage.sync.set({ userBlockedDomains: blocked }, async () => {
-          config.userBlockedDomains = blocked;
-
-          // Optionally, also tell the backend to delete all existing history for this domain
-          try {
-            await fetch(`${config.apiUrl}/delete_domain`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ domain })
-            });
-          } catch (e) { console.warn("Could not delete domain from backend:", e); }
-
-          resolve({ success: true });
-        });
-      } else {
-        resolve({ success: true });
+        config.userBlockedDomains = blocked;
+        chrome.storage.sync.set({ userBlockedDomains: blocked });
       }
+
+      // ALWAYS purge the backend, even if the domain was already blocklisted -
+      // an earlier ignore may have happened while the backend was down, which
+      // would otherwise leave its pages indexed forever.
+      fetch(`${config.apiUrl}/delete_domain`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain })
+      })
+        .then(r => r.json())
+        .then(res => resolve({ success: true, deleted: res.deleted ?? 0 }))
+        .catch(e => {
+          console.warn('Could not delete domain from backend:', e);
+          // Blocklisted locally either way - tracking has stopped.
+          resolve({ success: true, deleted: 0, purgeFailed: true });
+        });
     });
   });
 }

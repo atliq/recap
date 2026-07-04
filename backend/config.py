@@ -135,8 +135,11 @@ class Settings(BaseSettings):
         description="Delete pages not visited within this many days (0 = keep forever). Default ~4 months.",
     )
     enable_kg: bool = Field(
-        default=True,
-        description="Enable knowledge graph entity extraction",
+        default=False,
+        description="Master switch for the knowledge graph: gates entity extraction "
+                    "at ingestion AND the KG retrieval leg. Off by default (BM25 + "
+                    "dense only); after enabling, backfill already-indexed pages "
+                    "via POST /maintenance/rebuild_kg.",
     )
     semantic_gate_enabled: bool = Field(
         default=True,

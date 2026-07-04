@@ -35,6 +35,7 @@ const els = {
   apiUrl: document.getElementById('api-url'),
   minVisitDuration: document.getElementById('min-visit-duration'),
   checkInterval: document.getElementById('check-interval'),
+  kgEnabled: document.getElementById('kg-enabled'),
   provider: document.getElementById('default-llm'),
   model: document.getElementById('llm-model'),
   apiKey: document.getElementById('provider-api-key'),
@@ -125,11 +126,12 @@ function loadOptions() {
   // Load sync prefs first, then the secret keys, then paint - so all three maps
   // (models, keys, base URL) are populated before applyProvider() runs.
   chrome.storage.sync.get(
-    ['apiUrl', 'minVisitDuration', 'checkInterval', 'defaultLlm', 'preferredLlm', 'llmModels', 'llmBaseUrl'],
+    ['apiUrl', 'minVisitDuration', 'checkInterval', 'defaultLlm', 'preferredLlm', 'llmModels', 'llmBaseUrl', 'kgEnabled'],
     (sync) => {
       els.apiUrl.value = sync.apiUrl || defaultConfig.apiUrl;
       els.minVisitDuration.value = sync.minVisitDuration || defaultConfig.minVisitDuration;
       els.checkInterval.value = sync.checkInterval || defaultConfig.checkInterval;
+      els.kgEnabled.checked = sync.kgEnabled === true;  // off unless explicitly enabled
       Object.assign(providerModels, sync.llmModels || {});
       llmBaseUrl = sync.llmBaseUrl || '';
       const provider = sync.defaultLlm || sync.preferredLlm || defaultConfig.defaultLlm;
@@ -150,6 +152,7 @@ function saveOptions() {
   const apiUrl = els.apiUrl.value.trim();
   const minVisitDuration = parseInt(els.minVisitDuration.value, 10);
   const checkInterval = parseInt(els.checkInterval.value, 10);
+  const kgEnabled = els.kgEnabled.checked;
 
   if (!apiUrl) { showStatus('Enter a valid API URL.', 'error'); return; }
   if (isNaN(minVisitDuration) || minVisitDuration < 5) {
@@ -172,6 +175,7 @@ function saveOptions() {
     apiUrl,
     minVisitDuration,
     checkInterval,
+    kgEnabled,
     defaultLlm: provider,
     preferredLlm: provider,
     llmModels: providerModels,
@@ -193,6 +197,12 @@ function saveOptions() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(buildBackendCredentials(provider)),
     })
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then(() => fetch(`${apiUrl}/settings/kg`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: kgEnabled }),
+      }))
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(() => showStatus('Settings saved & synced with backend ✓', 'success'))
       .catch(e => showStatus(`Saved locally. Backend sync failed: ${e.message}`, 'error'));
