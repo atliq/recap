@@ -438,7 +438,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'getRelated') {
-    handleGetRelated(request.url, request.content).then(sendResponse).catch(e => sendResponse({ success: false, error: e.message }));
+    handleGetRelated(request.url, request.content, request.title).then(sendResponse).catch(e => sendResponse({ success: false, error: e.message }));
     return true;
   }
 });
@@ -635,11 +635,11 @@ async function handleExport() {
   return { success: true, data };
 }
 
-async function handleGetRelated(url, content) {
+async function handleGetRelated(url, content, title) {
   const res = await fetch(`${config.apiUrl}/related`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url: url || '', content: content || '' })
+    body: JSON.stringify({ url: url || '', content: content || '', title: title || '' })
   });
   if (!res.ok) return { success: false };
   const data = await res.json();

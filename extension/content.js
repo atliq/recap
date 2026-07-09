@@ -1380,7 +1380,7 @@ setTimeout(async () => {
     // Skip when the page has essentially no extractable text.
     if (!content.content || content.content.length < 50) return;
     safeSendMessage(
-      { action: 'getRelated', url: window.location.href, content: content.content.substring(0, 600) },
+      { action: 'getRelated', url: window.location.href, title: content.title || document.title || '', content: content.content.substring(0, 600) },
       (response) => {
         if (response?.success && response.related?.length > 0) {
           showResurfaceCard(response.related[0]);

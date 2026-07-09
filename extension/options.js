@@ -58,6 +58,7 @@ const statusEl = document.getElementById('status');
 document.addEventListener('DOMContentLoaded', () => {
   loadOptions();
   loadPrivacyStats();
+  loadEmbeddingInfo();
 });
 saveBtn.addEventListener('click', saveOptions);
 resetBtn.addEventListener('click', resetOptions);
@@ -310,6 +311,26 @@ function clearData() {
 }
 
 // ── Privacy Stats ───────────────────────────────────────────────
+// Read-only display of the active embedding model (structural; set in .env).
+function loadEmbeddingInfo() {
+  const el = document.getElementById('embedding-info');
+  if (!el) return;
+  chrome.storage.sync.get(['apiUrl'], (sync) => {
+    const apiUrl = (sync.apiUrl || defaultConfig.apiUrl).trim();
+    fetch(`${apiUrl}/embedding_info`)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then(info => {
+        const privacy = info.is_local
+          ? 'Local - private'
+          : 'Remote — sends page text off-device';
+        const dim = info.dimension ? ` · ${info.dimension}d` : '';
+        el.textContent = `${info.model}${dim} · ${privacy}`;
+        el.style.color = info.is_local ? '' : 'var(--danger, #c0453f)';
+      })
+      .catch(() => { el.textContent = 'Unavailable (backend offline)'; });
+  });
+}
+
 function loadPrivacyStats() {
   chrome.runtime.sendMessage({ action: 'getStats' }, (resp) => {
     if (chrome.runtime.lastError || !resp?.success) return;

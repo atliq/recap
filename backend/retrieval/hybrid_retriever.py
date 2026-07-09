@@ -17,6 +17,9 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import urlparse
+
+import numpy as np
 
 from backend.storage.database import Database
 from backend.storage.vector_store import VectorStore
@@ -55,6 +58,7 @@ class HybridRetriever:
         embedding_fn,
         recency_decay: float = 1.0,
         enable_kg: bool = True,
+        query_instruction: str = "",
     ):
         """
         Args:
@@ -68,6 +72,9 @@ class HybridRetriever:
             enable_kg: Master switch for the KG retrieval leg (mirrors
                 Settings.enable_kg). When False, retrieval runs BM25 + dense
                 only, regardless of per-request use_kg flags.
+            query_instruction: Instruction prepended to a text QUERY before
+                embedding (e.g. the bge query instruction). Documents are never
+                prefixed, so the vector space is unchanged - no reindex needed.
         """
         self.db = db
         self.vector_store = vector_store
@@ -75,6 +82,7 @@ class HybridRetriever:
         self.embedding_fn = embedding_fn
         self.recency_decay = recency_decay
         self.enable_kg = enable_kg
+        self.query_instruction = query_instruction
         self._query_vec_cache: Dict[str, List[float]] = {}  # small LRU-ish cache
 
     def retrieve(
@@ -228,7 +236,9 @@ class HybridRetriever:
             # Embed the query (cached - browsing-history searches repeat a lot)
             query_vector = self._query_vec_cache.get(query)
             if query_vector is None:
-                emb = self.embedding_fn([query])
+                # Prefix the instruction (if any) on the QUERY side only.
+                text = f"{self.query_instruction}{query}" if self.query_instruction else query
+                emb = self.embedding_fn([text])
                 query_vector = emb[0] if isinstance(emb, list) and emb else emb
                 if len(self._query_vec_cache) > 256:  # simple bound
                     self._query_vec_cache.clear()
@@ -245,6 +255,75 @@ class HybridRetriever:
         except Exception as e:
             logger.warning("Dense search failed: %s", e)
             return []
+
+    def find_related(
+        self,
+        url: str,
+        fallback_text: str = "",
+        min_similarity: float = 0.65,
+        candidate_pages: int = 8,
+    ) -> Optional[Dict[str, Any]]:
+        """Find the single most-related OTHER page for the Resurface nudge.
+
+        This is a dense "more like this", not a keyword query: the correct query
+        for related documents is the page's OWN indexed representation - the
+        centroid of its chunk vectors - not a re-sent text snippet. We fall back
+        to embedding `fallback_text` only when the page isn't indexed yet.
+
+        Cosine similarity (bounded 0-1, comparable across pages) is the gate.
+        Excludes the page itself and its domain (cross-site serendipity), and
+        returns None when nothing clears `min_similarity` - so the caller shows
+        no card rather than a weak one.
+        """
+        texts: List[str] = []
+        page = self.db.get_page(url)
+        if page:
+            texts = [c["text"] for c in self.db.get_chunks_by_page(page["id"]) if c.get("text")]
+        if not texts and fallback_text:
+            texts = [fallback_text]
+        if not texts:
+            return None
+
+        # Document-side embedding (NO query instruction - this represents a
+        # document), averaged into a single page vector.
+        vectors = self.embedding_fn(texts)
+        arr = np.asarray(vectors, dtype=float)
+        centroid = arr.mean(axis=0)
+        norm = np.linalg.norm(centroid)
+        if norm == 0:
+            return None
+        centroid = (centroid / norm).tolist()
+
+        hits = self.vector_store.search(
+            query_vector=centroid, limit=max(candidate_pages * 4, 20)
+        )
+        if not hits:
+            return None
+        meta = self.db.get_chunks_metadata([h["chunk_id"] for h in hits])
+
+        exclude_domain = urlparse(url).netloc
+        best_by_page: Dict[str, Dict[str, Any]] = {}
+        for h in hits:
+            m = meta.get(h["chunk_id"])
+            if not m:
+                continue
+            p_url = m["page_url"]
+            if p_url == url or urlparse(p_url).netloc == exclude_domain:
+                continue
+            sim = h["score"]
+            cur = best_by_page.get(p_url)
+            if cur is None or sim > cur["similarity"]:
+                best_by_page[p_url] = {
+                    "page_url": p_url,
+                    "page_title": m["page_title"],
+                    "text": m["text"],
+                    "similarity": sim,
+                }
+        if not best_by_page:
+            return None
+
+        best = max(best_by_page.values(), key=lambda x: x["similarity"])
+        return best if best["similarity"] >= min_similarity else None
 
     def _kg_search(
         self, query: str, limit: int = 10

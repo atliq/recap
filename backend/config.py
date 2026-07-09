@@ -120,6 +120,15 @@ class Settings(BaseSettings):
         default="cross-encoder/ms-marco-MiniLM-L-6-v2",
         description="Cross-encoder model for re-ranking",
     )
+    resurface_min_similarity: float = Field(
+        default=0.75,
+        ge=0.0,
+        le=1.0,
+        description="Minimum cosine similarity (bounded 0-1) between the current page and a "
+                    "candidate for a live Resurface card. Precision-first: below this, no card "
+                    "is shown. Raise toward 1.0 for fewer, more confident nudges. Note: this is "
+                    "a single global floor (see docs/RAG_BACKLOG.md - per-corpus tuning).",
+    )
 
     # -------------------------------------------------------------------------
     # Content Processing

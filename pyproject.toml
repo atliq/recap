@@ -1,6 +1,6 @@
 [project]
 name = "recap"
-version = "1.0.0"
+version = "1.1.0"
 description = "Local-first browsing-memory RAG - a Chrome extension plus a local FastAPI backend that indexes the pages you read and lets you search them in natural language."
 readme = "README.md"
 requires-python = ">=3.11,<3.14"

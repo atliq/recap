@@ -561,6 +561,75 @@ def test_semantic_gate():
     print("   ✓ Semantic Gate OK (prototype matching + fail-open)")
 
 
+def test_query_instruction():
+    """Fix #1: query gets the bge instruction; documents never do."""
+    print("11. Testing query/document embedding asymmetry fix...")
+    from backend.embeddings import query_instruction_for
+
+    # The default model is bge -> query side gets the retrieval instruction.
+    instr = query_instruction_for("local", "BAAI/bge-base-en-v1.5")
+    assert instr and "searching relevant passages" in instr.lower()
+    # Non-bge models / other providers get no instruction.
+    assert query_instruction_for("openai", "text-embedding-3-small") == ""
+    assert query_instruction_for("local", "sentence-transformers/all-MiniLM-L6-v2") == ""
+
+    print("   ✓ Query Instruction OK (bge query prefix, documents unprefixed)")
+
+
+def test_related_selection():
+    """Fix #2: index-native Resurface - cosine floor + self/domain exclusion."""
+    print("12. Testing resurface related-page selection...")
+    import hashlib
+    from backend.config import get_settings
+    get_settings.cache_clear()
+    settings = get_settings()
+    settings.ensure_directories()
+
+    from backend.storage.database import Database
+    from backend.storage.vector_store import VectorStore
+    from backend.storage.knowledge_graph import KnowledgeGraph
+    from backend.retrieval.hybrid_retriever import HybridRetriever
+
+    db = Database(settings.db_path)
+    vs = VectorStore(settings.vector_store_path, embedding_dim=4)
+    kg = KnowledgeGraph(db)
+
+    # Controlled embeddings so cosine is exact: "alpha" text -> e1, "beta" -> e2
+    # (orthogonal, so alpha vs beta cosine == 0).
+    UNIT = {"alpha": [1.0, 0.0, 0.0, 0.0], "beta": [0.0, 1.0, 0.0, 0.0]}
+    def mock_embed(texts):
+        return [list(UNIT["alpha"] if "alpha" in t else UNIT["beta"]) for t in texts]
+
+    def add_page(url, domain, text, vec):
+        pid, _ = db.upsert_page(url=url, title=url, domain=domain,
+                                content_type="article", quality_score=0.9,
+                                word_count=len(text.split()))
+        cid = hashlib.md5(url.encode()).hexdigest()[:16]
+        db.insert_chunks(pid, url, [{"chunk_id": cid, "text": text,
+                                     "chunk_index": 0, "token_count": 3}])
+        db.update_content_hash(url, "h")
+        vs.add_chunks([cid], [vec])
+
+    add_page("https://a.com/cur",  "a.com", "alpha topic here",  UNIT["alpha"])  # current
+    add_page("https://b.com/rel",  "b.com", "alpha topic again", UNIT["alpha"])  # related, cosine 1.0
+    add_page("https://c.com/un",   "c.com", "beta different",    UNIT["beta"])   # unrelated, cosine 0
+    add_page("https://a.com/same", "a.com", "alpha same domain", UNIT["alpha"])  # same domain -> excluded
+
+    retr = HybridRetriever(db, vs, kg, mock_embed)
+
+    # Related cross-domain page wins; self and same-domain are excluded.
+    best = retr.find_related("https://a.com/cur", min_similarity=0.65)
+    assert best is not None
+    assert best["page_url"] == "https://b.com/rel"
+    assert best["similarity"] > 0.99
+
+    # Precision-first: when the only cross-domain matches are unrelated (cosine 0
+    # for a beta page), nothing clears the floor -> no card.
+    assert retr.find_related("https://c.com/un", min_similarity=0.65) is None
+
+    print("   ✓ Resurface Related-Page Selection OK (index-native cosine + exclusions)")
+
+
 def cleanup(test_data_dir: str):
     """Clean up test data."""
     try:
@@ -590,6 +659,8 @@ if __name__ == "__main__":
         test_reranker,
         test_end_to_end_pipeline,
         test_semantic_gate,
+        test_query_instruction,
+        test_related_selection,
     ]
 
     for test_fn in tests:

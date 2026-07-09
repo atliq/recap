@@ -81,6 +81,7 @@ class AppState:
     reranker: ReRanker
     answer_generator: AnswerGenerator
     embedding_fn = None
+    embedding_dim: int = 0
     nlp = None
     start_time: float = 0.0
 
@@ -138,8 +139,14 @@ async def lifespan(app: FastAPI):
 
     # Build the embedding function (local or OpenAI-compatible). The true vector
     # dimension is derived from the model, not the config int.
-    from backend.embeddings import build_embedding_fn
+    from backend.embeddings import build_embedding_fn, query_instruction_for
     state.embedding_fn, embed_dim, embed_fingerprint = build_embedding_fn(settings)
+    # Query-side instruction for instruction-tuned embedders (e.g. bge). Applied
+    # to text queries only; documents stay un-prefixed, so no reindex.
+    query_instruction = query_instruction_for(
+        getattr(settings, "embedding_provider", "local"), settings.embedding_model
+    )
+    state.embedding_dim = embed_dim
 
     # Load spaCy (optional)
     state.nlp = _load_spacy(settings.spacy_model)
@@ -176,6 +183,7 @@ async def lifespan(app: FastAPI):
         embedding_fn=state.embedding_fn,
         recency_decay=settings.recency_decay,
         enable_kg=settings.enable_kg,
+        query_instruction=query_instruction,
     )
     state.reranker = ReRanker(settings.rerank_model)
     state.answer_generator = AnswerGenerator(settings)
@@ -418,6 +426,29 @@ def _register_routes(app: FastAPI) -> None:
         )
 
     # -----------------------------------------------------------------
+    # Embedding info (read-only; shown in Settings/onboarding)
+    # -----------------------------------------------------------------
+    @app.get("/embedding_info")
+    def embedding_info():
+        """Read-only info about the active embedding model.
+
+        Embeddings are a STRUCTURAL choice (they define the vector index),
+        configured in .env - not swappable per request like the LLM. This
+        endpoint just surfaces which model is in use so the UI can display it.
+        """
+        from backend.embeddings import _is_loopback
+        s = state.settings
+        provider = getattr(s, "embedding_provider", "local") or "local"
+        base_url = getattr(s, "embedding_base_url", "") or ""
+        is_local = provider == "local" or _is_loopback(base_url)
+        return {
+            "model": s.embedding_model,
+            "provider": provider,
+            "dimension": state.embedding_dim,
+            "is_local": is_local,
+        }
+
+    # -----------------------------------------------------------------
     # Statistics
     # -----------------------------------------------------------------
     @app.get("/stats", response_model=StatsResponse)
@@ -604,51 +635,28 @@ def _register_routes(app: FastAPI) -> None:
 
     @app.post("/related")
     def get_related(request: RelatedRequest):
-        """Find related pages to a currently viewed page for Resurface."""
-        query_text = request.content[:800] if request.content else request.url
-        results = state.hybrid_retriever.retrieve(
-            query=query_text,
-            top_k=8
+        """Find ONE genuinely related page for the live Resurface nudge.
+
+        Precision-first: a wrong nudge erodes trust, a missing one is invisible.
+        Relatedness is index-native dense similarity - the current page's own
+        vectors are the correct "more like this" query, and cosine (bounded 0-1)
+        is the gate. Delegated to HybridRetriever.find_related; below the floor it
+        returns nothing (no card).
+        """
+        fallback = " ".join(p for p in (request.title, request.content) if p).strip()[:1200]
+        best = state.hybrid_retriever.find_related(
+            url=request.url,
+            fallback_text=fallback,
+            min_similarity=state.settings.resurface_min_similarity,
         )
-        
-        # Filter out same URL and domain for a serendipitous discovery
-        from urllib.parse import urlparse
-        req_domain = urlparse(request.url).netloc
-        
-        filtered = []
-        for r in results:
-            r_url = r.get("page_url", "")
-            if r_url == request.url:
-                continue
-            res_domain = urlparse(r_url).netloc
-            if res_domain == req_domain:
-                continue
-            # Must be reasonably relevant (RRF scores are small, ~0.005-0.03)
-            if r.get("score", 0) > 0.005:
-                filtered.append(r)
-                
-        if not filtered:
+        if not best:
             return {"related": []}
-            
-        # Deduplicate by URL
-        seen_urls = set()
-        unique_filtered = []
-        for f in filtered:
-            f_url = f.get("page_url", "")
-            if f_url not in seen_urls:
-                seen_urls.add(f_url)
-                unique_filtered.append(f)
-        
-        # Return top 1 related page
-        best_match = unique_filtered[0] if unique_filtered else None
-        if best_match:
-            return {"related": [{
-                "url": best_match.get("page_url", ""),
-                "title": best_match.get("page_title", ""),
-                "snippet": (best_match.get("text", "") or "")[:300],
-                "score": best_match.get("score", 0)
-            }]}
-        return {"related": []}
+        return {"related": [{
+            "url": best["page_url"],
+            "title": best["page_title"],
+            "snippet": (best.get("text") or "")[:300],
+            "similarity": round(best["similarity"], 3),
+        }]}
 
     # -----------------------------------------------------------------
     # Knowledge Graph

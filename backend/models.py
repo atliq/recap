@@ -157,6 +157,7 @@ class RelatedRequest(BaseModel):
     """Request for pages related to the one currently being viewed (Resurface)."""
     url: str = Field(..., max_length=8192, description="URL of the current page")
     content: str = Field(default="", max_length=8192, description="Snippet of the current page's text")
+    title: str = Field(default="", max_length=2048, description="Current page title (strong topic signal)")
 
 
 # =============================================================================

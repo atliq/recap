@@ -24,6 +24,19 @@ logger = logging.getLogger(__name__)
 
 EmbeddingFn = Callable[[List[str]], List[List[float]]]
 
+
+def query_instruction_for(provider: str, model_name: str) -> str:
+    """Query-side instruction for instruction-tuned retrieval models.
+
+    bge-*-en(-v1.5) models were trained to prefix the QUERY (not the documents)
+    with this instruction; omitting it measurably degrades retrieval quality.
+    Documents are never prefixed. Returns "" for models that don't use one.
+    """
+    name = (model_name or "").lower()
+    if "bge" in name and "-en" in name:
+        return "Represent this sentence for searching relevant passages: "
+    return ""
+
 # OpenAI-compatible embedding endpoints (base URLs). "local" is handled separately.
 EMBEDDING_PRESETS = {
     "openai": "https://api.openai.com/v1",
