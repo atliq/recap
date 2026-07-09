@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/screenshots/logo.png" alt="RECAP logo" width="220">
+</p>
+
 # RECAP
 
 A Chrome extension that remembers the pages you read and lets you search them in plain English. It quietly indexes the content of pages you spend time on, keeps everything on your own machine, and answers questions about your browsing history using retrieval-augmented generation (RAG).
